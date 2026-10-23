@@ -31,11 +31,16 @@ export default async function AppLayout({
           Fit-Nime
         </Link>
         <AppNav />
-        <form action={logout} className="flex items-center gap-3">
-          <span className="hidden max-w-40 truncate text-xs text-zinc-500 min-[380px]:inline">
+        <form action={logout} className="flex min-w-0 items-center gap-3">
+          <span className="hidden max-w-40 truncate text-xs text-zinc-500 sm:inline">
             {user.email}
           </span>
-          <Button type="submit" variant="secondary" size="sm">
+          <Button
+            type="submit"
+            variant="secondary"
+            size="sm"
+            className="min-h-11 shrink-0"
+          >
             Sign out
           </Button>
         </form>
