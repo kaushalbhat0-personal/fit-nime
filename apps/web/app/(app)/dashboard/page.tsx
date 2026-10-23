@@ -4,10 +4,13 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/features/auth/user";
 import {
-  calculateLevel,
+  calculateLevelProgress,
   calculateTotalXp,
 } from "@/features/gamification/domain/level";
 import { CATEGORY_META } from "@/features/workouts/components/categories";
+import { FocusCard } from "@/features/workouts/components/focus-card";
+import type { LoggableExercise } from "@/features/workouts/components/log-workout-form";
+import { selectTodaysFocus } from "@/features/workouts/domain/focus";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -38,22 +41,47 @@ export default async function DashboardPage() {
     .select("strength_xp, endurance_xp, agility_xp, focus_xp")
     .eq("user_id", user?.id ?? "")
     .single();
+  const { data: catalog } = await supabase
+    .from("exercises")
+    .select("id, name, description, category, unit, default_value")
+    .eq("is_active", true);
 
   const owned = stats ?? EMPTY_STATS;
-  const totalXp = calculateTotalXp(owned);
-  const level = calculateLevel(totalXp);
+  const progress = calculateLevelProgress(calculateTotalXp(owned));
+  const focus: LoggableExercise[] = selectTodaysFocus(
+    catalog ?? [],
+    new Date(),
+  );
 
   return (
     <main className="flex flex-col gap-4">
       <h1 className="text-2xl font-bold tracking-tight">
         Welcome{profile?.display_name ? `, ${profile.display_name}` : ""}!
       </h1>
+      <FocusCard exercises={focus} />
       <Button asChild size="lg" className="w-full">
         <Link href="/log">Log a workout</Link>
       </Button>
       <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-center shadow-sm">
         <p className="text-sm font-semibold">
-          Level {level} · {totalXp} total XP
+          Level {progress.level} · {progress.totalXp} total XP
+        </p>
+        <div
+          role="progressbar"
+          aria-label={`Level ${progress.level} progress`}
+          aria-valuenow={Math.round(progress.progress * 100)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          className="mx-auto mt-2 h-2 max-w-56 overflow-hidden rounded-full bg-zinc-100"
+        >
+          <div
+            className="h-full rounded-full bg-amber-400"
+            style={{ width: `${progress.progress * 100}%` }}
+          />
+        </div>
+        <p className="mt-1 text-xs text-zinc-500">
+          {progress.nextLevelAt - progress.totalXp} XP to level{" "}
+          {progress.level + 1}
         </p>
         <ul className="mt-3 flex flex-col gap-1.5 text-left">
           {(

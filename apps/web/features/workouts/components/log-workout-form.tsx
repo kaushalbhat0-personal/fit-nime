@@ -2,6 +2,8 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
+import Link from "next/link";
+import { PartyPopper, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { logWorkout, type LogWorkoutState } from "@/features/workouts/actions";
@@ -46,7 +48,7 @@ function FormFeedback({ state }: { state: LogWorkoutState }) {
     : [];
   if (state.ok) {
     const statLines =
-      state.xp == null
+      state.xp?.byStat == null
         ? []
         : (Object.entries(state.xp.byStat) as [ExerciseCategory, number][])
             .filter(([, amount]) => amount > 0)
@@ -54,30 +56,92 @@ function FormFeedback({ state }: { state: LogWorkoutState }) {
               ([category, amount]) =>
                 `${CATEGORY_META[category].label} +${amount}`,
             );
+    const remaining =
+      state.xp?.nextLevelAt != null && state.xp?.cumulativeTotal != null
+        ? state.xp.nextLevelAt - state.xp.cumulativeTotal
+        : null;
     return (
       <div
         role="status"
-        className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900"
+        className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 shadow-sm"
       >
-        <p>
-          Workout logged — {state.loggedCount}{" "}
-          {state.loggedCount === 1 ? "exercise" : "exercises"} saved.
-        </p>
+        {state.xp?.leveledUp ? (
+          <p className="flex items-center gap-2 text-base font-bold text-emerald-950">
+            <PartyPopper
+              aria-hidden="true"
+              className="size-5 motion-safe:animate-pulse"
+            />
+            LEVEL UP! You reached level {state.xp.level}.
+          </p>
+        ) : (
+          <p className="text-sm font-bold text-emerald-950">
+            Workout complete — nice work!
+          </p>
+        )}
+        {/* Character reaction slot (future): <CharacterCelebration /> renders
+            here once assets land. No placeholder component until then. */}
         {state.xp != null ? (
-          <p className="mt-1 text-base font-bold">+{state.xp.total} XP</p>
-        ) : null}
-        {statLines.length > 0 ? (
-          <ul className="mt-1 font-normal">
-            {statLines.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-        ) : null}
-        {state.xp == null ? (
-          <p className="mt-1 font-normal">
-            XP could not be awarded this time — your workout is still saved.
+          <>
+            <p className="mt-2 flex items-center gap-1.5 text-2xl font-bold text-emerald-900">
+              <Sparkles aria-hidden="true" className="size-5" />+
+              {state.xp.total} XP
+            </p>
+            {statLines.length > 0 ? (
+              <ul className="mt-1 text-sm font-medium text-emerald-900">
+                {statLines.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            ) : null}
+            {state.xp.level != null && state.xp.progress != null ? (
+              <div className="mt-3">
+                <div className="flex items-baseline justify-between text-xs font-medium text-emerald-900">
+                  <span>Level {state.xp.level}</span>
+                  {remaining != null && remaining > 0 ? (
+                    <span>
+                      {remaining} XP to level {state.xp.level + 1}
+                    </span>
+                  ) : (
+                    <span>Level {state.xp.level}</span>
+                  )}
+                </div>
+                <div
+                  role="progressbar"
+                  aria-label={`Level ${state.xp.level} progress`}
+                  aria-valuenow={Math.round(state.xp.progress * 100)}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  className="mt-1 h-2 overflow-hidden rounded-full bg-emerald-100"
+                >
+                  <div
+                    className="h-full rounded-full bg-emerald-500"
+                    style={{ width: `${state.xp.progress * 100}%` }}
+                  />
+                </div>
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <p className="mt-1 text-sm text-emerald-900">
+            {state.loggedCount}{" "}
+            {state.loggedCount === 1 ? "exercise" : "exercises"} saved. XP could
+            not be awarded this time — your workout is still saved.
+          </p>
+        )}
+        {state.xp != null ? (
+          <p className="mt-1 text-xs text-emerald-800">
+            {state.loggedCount}{" "}
+            {state.loggedCount === 1 ? "exercise" : "exercises"} saved.
           </p>
         ) : null}
+        <div className="mt-3 flex gap-2">
+          <Button asChild size="sm" className="flex-1">
+            <Link href="/dashboard">View progress</Link>
+          </Button>
+          <Button asChild size="sm" variant="secondary" className="flex-1">
+            <Link href="/log">Log another</Link>
+          </Button>
+        </div>
       </div>
     );
   }
@@ -185,7 +249,9 @@ export function LogWorkoutForm({
       </div>
 
       <FormFeedback state={state} />
-      <SubmitButton exerciseCount={exercises.length} />
+      <div className="sticky bottom-4 z-10 rounded-full bg-[#fafaf8]/95 pb-[env(safe-area-inset-bottom)] shadow-sm">
+        <SubmitButton exerciseCount={exercises.length} />
+      </div>
     </form>
   );
 }

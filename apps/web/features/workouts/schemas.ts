@@ -119,10 +119,18 @@ export type LogWorkoutState = {
   /**
    * Authoritative award result. Present (possibly null) only on success:
    * null means the workout saved but XP could not be awarded — the UI
-   * must not claim XP in that case.
+   * must not claim XP in that case. `total` always comes from the award
+   * RPC; cumulative fields are re-read from player_stats (null when that
+   * read fails — the UI must hide level context rather than guess it).
    */
   xp?: {
     total: number;
-    byStat: Record<string, number>;
+    byStat: Record<string, number> | null;
+    cumulativeTotal: number | null;
+    level: number | null;
+    leveledUp: boolean;
+    progress: number | null;
+    nextLevelAt: number | null;
+    intoLevel: number | null;
   } | null;
 };

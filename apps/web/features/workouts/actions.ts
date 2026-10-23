@@ -3,8 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/features/auth/user";
-import { calculateWorkoutXp } from "@/features/gamification/domain/xp";
-import type { EntryXpInput } from "@/features/gamification/domain/types";
+import { parseEventByStat } from "@/features/gamification/domain/events";
+import {
+  calculateLevel,
+  calculateLevelProgress,
+  calculateTotalXp,
+} from "@/features/gamification/domain/level";
 import {
   parseLogWorkoutFormData,
   validateLogWorkoutInput,
@@ -44,10 +48,9 @@ export async function logWorkout(
 
   // The catalog is the source of truth: every submitted id must exist
   // and be active. Unknown ids are rejected here, never sent to the FK.
-  // Category/unit travel along for the XP feedback breakdown below.
   const { data: catalog, error: catalogError } = await supabase
     .from("exercises")
-    .select("id, category, unit")
+    .select("id")
     .eq("is_active", true);
   if (catalogError || !catalog) {
     return { message: "Could not load exercises. Try again." };
@@ -101,22 +104,40 @@ export async function logWorkout(
     return { ok: true, loggedCount: entries.length, xp: null };
   }
 
-  // Display breakdown only; persistence amounts come from the function.
-  const byMeta = new Map(catalog.map((c) => [c.id, c]));
-  const awardInputs: EntryXpInput[] = [];
-  for (const e of entries) {
-    const meta = byMeta.get(e.exerciseId);
-    if (meta) {
-      awardInputs.push({
-        category: meta.category,
-        quantity: e.quantity,
-        unit: meta.unit,
-      });
-    }
-  }
+  // Cumulative context for the completion peak. Both reads are own-row,
+  // RLS-scoped; byStat comes from the authoritative event metadata, never
+  // recomputed locally. Any read failure degrades to XP-total-only UI.
+  const { data: statsRow } = await supabase
+    .from("player_stats")
+    .select("strength_xp, endurance_xp, agility_xp, focus_xp")
+    .eq("user_id", user.id)
+    .single();
+  const { data: eventRow } = await supabase
+    .from("xp_events")
+    .select("metadata")
+    .eq("user_id", user.id)
+    .filter("metadata->>workout_session_id", "eq", session.id)
+    .single();
+
+  const cumulative = statsRow ? calculateTotalXp(statsRow) : null;
+  const level = cumulative === null ? null : calculateLevel(cumulative);
+  const progress =
+    cumulative === null ? null : calculateLevelProgress(cumulative);
   return {
     ok: true,
     loggedCount: entries.length,
-    xp: { total: xpTotal, byStat: calculateWorkoutXp(awardInputs).byStat },
+    xp: {
+      total: xpTotal,
+      byStat: parseEventByStat(eventRow?.metadata ?? null),
+      cumulativeTotal: cumulative,
+      level,
+      leveledUp:
+        level !== null && cumulative !== null
+          ? level > calculateLevel(cumulative - xpTotal)
+          : false,
+      progress: progress?.progress ?? null,
+      nextLevelAt: progress?.nextLevelAt ?? null,
+      intoLevel: progress?.intoLevel ?? null,
+    },
   };
 }

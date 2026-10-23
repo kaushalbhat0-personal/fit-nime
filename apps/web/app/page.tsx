@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { getCurrentUser } from "@/features/auth/user";
 
 const STATS = [
   { label: "Strength", hint: "Strength exercises" },
@@ -8,7 +10,12 @@ const STATS = [
   { label: "Focus", hint: "Mindfulness" },
 ] as const;
 
-export default function Home() {
+export default async function Home() {
+  // Signed-in users have a home already; don't strand them on marketing.
+  const user = await getCurrentUser();
+  if (user) {
+    redirect("/dashboard");
+  }
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-10">
       <header className="flex flex-col gap-2 text-center">

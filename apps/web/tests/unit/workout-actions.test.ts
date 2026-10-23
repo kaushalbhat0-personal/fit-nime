@@ -29,6 +29,15 @@ function makeDb(scenario: {
   entriesError?: { message: string } | null;
   rpcTotal?: number | null;
   rpcError?: { message: string } | null;
+  statsRow?: {
+    strength_xp: number;
+    endurance_xp: number;
+    agility_xp: number;
+    focus_xp: number;
+  } | null;
+  statsError?: { message: string } | null;
+  eventRow?: { metadata: unknown } | null;
+  eventError?: { message: string } | null;
 }) {
   const calls: Call[] = [];
   let table = "";
@@ -58,6 +67,18 @@ function makeDb(scenario: {
             }
             if (head === "delete") {
               return resolve({ data: [], error: null });
+            }
+            if (head === "select" && table === "player_stats") {
+              return resolve({
+                data: scenario.statsRow ?? null,
+                error: scenario.statsError ?? null,
+              });
+            }
+            if (head === "select" && table === "xp_events") {
+              return resolve({
+                data: scenario.eventRow ?? null,
+                error: scenario.eventError ?? null,
+              });
             }
             return resolve({ data: null, error: null });
           };
@@ -112,6 +133,18 @@ describe("logWorkout", () => {
       ],
       session: { id: SESSION_ID },
       rpcTotal: 45,
+      statsRow: {
+        strength_xp: 20,
+        endurance_xp: 25,
+        agility_xp: 0,
+        focus_xp: 0,
+      },
+      eventRow: {
+        metadata: {
+          workout_session_id: SESSION_ID,
+          by_stat: { strength: 20, endurance: 25, agility: 0, focus: 0 },
+        },
+      },
     });
     mockedClient.mockResolvedValue(db as never);
 
@@ -129,6 +162,12 @@ describe("logWorkout", () => {
       xp: {
         total: 45,
         byStat: { strength: 20, endurance: 25, agility: 0, focus: 0 },
+        cumulativeTotal: 45,
+        level: 1,
+        leveledUp: false,
+        progress: 0.45,
+        nextLevelAt: 100,
+        intoLevel: 45,
       },
     });
     const sessionInsert = db.calls.find(
@@ -194,6 +233,18 @@ describe("logWorkout", () => {
       catalog: [{ id: EX_A, category: "strength", unit: "reps" }],
       session: { id: SESSION_ID },
       rpcTotal: 0,
+      statsRow: {
+        strength_xp: 10,
+        endurance_xp: 0,
+        agility_xp: 0,
+        focus_xp: 0,
+      },
+      eventRow: {
+        metadata: {
+          workout_session_id: SESSION_ID,
+          by_stat: { strength: 10, endurance: 0, agility: 0, focus: 0 },
+        },
+      },
     });
     mockedClient.mockResolvedValue(db as never);
 
@@ -205,8 +256,101 @@ describe("logWorkout", () => {
       xp: {
         total: 0,
         byStat: { strength: 10, endurance: 0, agility: 0, focus: 0 },
+        cumulativeTotal: 10,
+        level: 1,
+        leveledUp: false,
+        progress: 0.1,
+        nextLevelAt: 100,
+        intoLevel: 10,
       },
     });
+  });
+
+  it("detects a level-up from trusted cumulative XP", async () => {
+    const db = makeDb({
+      catalog: [{ id: EX_A, category: "strength", unit: "reps" }],
+      session: { id: SESSION_ID },
+      rpcTotal: 20,
+      statsRow: {
+        strength_xp: 110,
+        endurance_xp: 0,
+        agility_xp: 0,
+        focus_xp: 0,
+      },
+      eventRow: {
+        metadata: {
+          workout_session_id: SESSION_ID,
+          by_stat: { strength: 20, endurance: 0, agility: 0, focus: 0 },
+        },
+      },
+    });
+    mockedClient.mockResolvedValue(db as never);
+
+    const state = await logWorkout({}, form([[`qty_${EX_A}`, "20"]]));
+
+    // Prior total was 90 (level 1); 110 is level 2.
+    expect(state.xp).toMatchObject({
+      total: 20,
+      cumulativeTotal: 110,
+      level: 2,
+      leveledUp: true,
+      nextLevelAt: 400,
+      intoLevel: 10,
+    });
+  });
+
+  it("shows XP total without level context when the stats read fails", async () => {
+    const db = makeDb({
+      catalog: [{ id: EX_A, category: "strength", unit: "reps" }],
+      session: { id: SESSION_ID },
+      rpcTotal: 10,
+      statsError: { message: "boom" },
+      eventRow: {
+        metadata: {
+          workout_session_id: SESSION_ID,
+          by_stat: { strength: 10, endurance: 0, agility: 0, focus: 0 },
+        },
+      },
+    });
+    mockedClient.mockResolvedValue(db as never);
+
+    const state = await logWorkout({}, form([[`qty_${EX_A}`, "10"]]));
+
+    // Never fabricate level context: totals stay, level fields are null.
+    expect(state).toEqual({
+      ok: true,
+      loggedCount: 1,
+      xp: {
+        total: 10,
+        byStat: { strength: 10, endurance: 0, agility: 0, focus: 0 },
+        cumulativeTotal: null,
+        level: null,
+        leveledUp: false,
+        progress: null,
+        nextLevelAt: null,
+        intoLevel: null,
+      },
+    });
+  });
+
+  it("shows XP total without stat lines when the event read fails", async () => {
+    const db = makeDb({
+      catalog: [{ id: EX_A, category: "strength", unit: "reps" }],
+      session: { id: SESSION_ID },
+      rpcTotal: 10,
+      statsRow: {
+        strength_xp: 10,
+        endurance_xp: 0,
+        agility_xp: 0,
+        focus_xp: 0,
+      },
+      eventError: { message: "boom" },
+    });
+    mockedClient.mockResolvedValue(db as never);
+
+    const state = await logWorkout({}, form([[`qty_${EX_A}`, "10"]]));
+
+    expect(state.xp).toMatchObject({ total: 10, byStat: null });
   });
 
   it("removes the new session when the entries insert fails", async () => {

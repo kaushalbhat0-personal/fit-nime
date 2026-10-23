@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { AppNav } from "@/components/app-nav";
 import { logout } from "@/features/auth/actions";
 import { getCurrentUser } from "@/features/auth/user";
 
@@ -21,10 +23,16 @@ export default async function AppLayout({
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 py-6">
-      <header className="mb-6 flex items-center justify-between">
-        <p className="text-sm font-semibold">Fit-Nime</p>
+      <header className="mb-4 flex items-center justify-between gap-2">
+        <Link
+          href="/dashboard"
+          className="rounded-full text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
+          Fit-Nime
+        </Link>
+        <AppNav />
         <form action={logout} className="flex items-center gap-3">
-          <span className="max-w-40 truncate text-xs text-zinc-500">
+          <span className="hidden max-w-40 truncate text-xs text-zinc-500 min-[380px]:inline">
             {user.email}
           </span>
           <Button type="submit" variant="secondary" size="sm">
