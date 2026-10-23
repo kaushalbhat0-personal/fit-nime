@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { CompanionFigure } from "@/components/companion";
 import { getCurrentUser } from "@/features/auth/user";
 
 const STATS = [
@@ -32,18 +33,13 @@ export default async function Home() {
       </header>
 
       <section
-        aria-label="Character preview"
+        aria-label="Training companion preview"
         className="rounded-2xl border border-zinc-200 bg-white p-6 text-center shadow-sm"
       >
-        <div
-          aria-hidden="true"
-          className="mx-auto mb-3 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-amber-100 to-rose-100 text-4xl"
-        >
-          ✦
-        </div>
-        <p className="text-sm font-semibold">Level 1 · Stage 1</p>
+        <CompanionFigure size={144} />
+        <p className="mt-2 text-sm font-semibold">Level 1 · Stage 1</p>
         <p className="mt-1 text-xs text-zinc-500">
-          Godot avatar loads here later (lazy, same-origin iframe).
+          Your training companion celebrates every workout you log.
         </p>
         <div
           className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-100"

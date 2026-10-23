@@ -13,3 +13,55 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+/* Companion figure (RCCF-008, presentation only).
+   Subtle entrance + gentle bob for celebrate/level-up, plus a warm glow
+   on level-up. All motion is removed for prefers-reduced-motion. */
+@keyframes companion-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes companion-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.companion-enter {
+  animation: companion-enter 0.45s ease-out both;
+}
+
+.companion-celebrate img {
+  animation: companion-bob 2.6s ease-in-out 0.45s infinite;
+}
+
+.companion-level-up {
+  filter: drop-shadow(0 0 14px rgba(245, 166, 35, 0.45));
+}
+
+.companion-level-up img {
+  animation: companion-bob 2s ease-in-out 0.45s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .companion-enter,
+  .companion-celebrate img,
+  .companion-level-up img {
+    animation: none;
+  }
+
+  .companion-level-up {
+    filter: none;
+  }
+}

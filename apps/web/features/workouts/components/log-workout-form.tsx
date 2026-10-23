@@ -5,6 +5,11 @@ import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { PartyPopper, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  CompanionFigure,
+  companionLineFor,
+  pickCelebrationVariant,
+} from "@/components/companion";
 import { Input } from "@/components/ui/input";
 import { logWorkout, type LogWorkoutState } from "@/features/workouts/actions";
 import {
@@ -47,6 +52,10 @@ function FormFeedback({ state }: { state: LogWorkoutState }) {
     ? [...new Set(Object.values(state.errors).flat().filter(Boolean))]
     : [];
   if (state.ok) {
+    const variant = pickCelebrationVariant({
+      leveledUp: state.xp?.leveledUp ?? false,
+      totalXp: state.xp?.total ?? null,
+    });
     const statLines =
       state.xp?.byStat == null
         ? []
@@ -78,8 +87,12 @@ function FormFeedback({ state }: { state: LogWorkoutState }) {
             Workout complete — nice work!
           </p>
         )}
-        {/* Character reaction slot (future): <CharacterCelebration /> renders
-            here once assets land. No placeholder component until then. */}
+        <div className="mt-1 flex flex-col items-center text-center">
+          <CompanionFigure variant={variant} size={128} />
+          <p className="mt-1 text-xs font-medium text-emerald-800">
+            {companionLineFor(variant)}
+          </p>
+        </div>
         {state.xp != null ? (
           <>
             <p className="mt-2 flex items-center gap-1.5 text-2xl font-bold text-emerald-900">

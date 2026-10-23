@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Dumbbell } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { CompanionFigure } from "@/components/companion";
 import {
   LogWorkoutForm,
   type LoggableExercise,
@@ -48,9 +49,13 @@ export default async function LogPage() {
       </header>
 
       {exercises.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-zinc-300 bg-white p-6 text-center text-sm text-zinc-600">
-          No exercises are available right now. Check back soon.
-        </p>
+        <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-6 text-center shadow-sm">
+          <CompanionFigure size={72} />
+          <p className="mt-2 text-sm text-zinc-600">
+            No exercises are available right now. Your companion will be here
+            when they return — check back soon.
+          </p>
+        </div>
       ) : (
         <LogWorkoutForm exercises={exercises} />
       )}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
+import { CompanionFigure } from "@/components/companion";
 import { getCurrentUser } from "@/features/auth/user";
 import {
   calculateLevelProgress,
@@ -58,6 +59,19 @@ export default async function DashboardPage() {
       <h1 className="text-2xl font-bold tracking-tight">
         Welcome{profile?.display_name ? `, ${profile.display_name}` : ""}!
       </h1>
+      <section
+        aria-label="Training companion"
+        className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
+      >
+        <CompanionFigure size={72} className="mx-0 shrink-0" />
+        <div>
+          <p className="text-sm font-bold">Ready when you are.</p>
+          <p className="mt-0.5 text-xs leading-5 text-zinc-600">
+            Your companion warmed up. Today&apos;s focus is below — start small,
+            finish proud.
+          </p>
+        </div>
+      </section>
       <FocusCard exercises={focus} />
       <Button asChild size="lg" className="w-full">
         <Link href="/log">Log a workout</Link>

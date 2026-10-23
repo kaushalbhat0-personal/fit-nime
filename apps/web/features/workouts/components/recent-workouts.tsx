@@ -1,5 +1,6 @@
-import { History, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { CompanionFigure } from "@/components/companion";
 import { getCurrentUser } from "@/features/auth/user";
 import { parseEventByStat } from "@/features/gamification/domain/events";
 import { CATEGORY_META } from "@/features/workouts/components/categories";
@@ -73,13 +74,11 @@ export async function RecentWorkouts() {
         aria-label="Recent workouts"
         className="rounded-2xl border border-dashed border-zinc-300 bg-white p-6 text-center shadow-sm"
       >
-        <History
-          aria-hidden="true"
-          className="mx-auto mb-2 size-5 text-zinc-400"
-        />
-        <p className="text-sm font-medium">No workouts yet</p>
+        <CompanionFigure size={96} />
+        <p className="mt-2 text-sm font-medium">No workouts yet</p>
         <p className="mt-1 text-xs text-zinc-500">
-          Log your first workout above — it will show up here.
+          Your first workout is waiting. Log it above and your companion will
+          cheer you on.
         </p>
       </section>
     );
