@@ -9,7 +9,13 @@ export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isAuthPage = pathname === "/login" || pathname === "/signup";
-  const isProtectedPage = pathname.startsWith("/dashboard");
+  // Segment-aware match: "/login".startsWith("/log") is true, so a raw
+  // prefix check would loop the login page onto itself.
+  const isProtectedPage =
+    pathname === "/dashboard" ||
+    pathname.startsWith("/dashboard/") ||
+    pathname === "/log" ||
+    pathname.startsWith("/log/");
 
   if (!user && isProtectedPage) {
     return redirectTo(request, response, "/login");

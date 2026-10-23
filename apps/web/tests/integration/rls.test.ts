@@ -148,6 +148,29 @@ describe.skipIf(!hasEnv)("rls + provisioning", () => {
     expect(error).not.toBeNull();
   });
 
+  it("rejects updates and deletes on another user's session", async () => {
+    const { data: updated } = await b
+      .from("workout_sessions")
+      .update({ notes: "hijacked" })
+      .eq("id", sessionAId)
+      .select("id");
+    expect(updated).toHaveLength(0);
+
+    const { data: deleted } = await b
+      .from("workout_sessions")
+      .delete()
+      .eq("id", sessionAId)
+      .select("id");
+    expect(deleted).toHaveLength(0);
+
+    // A's session is untouched.
+    const { data: stillThere } = await a
+      .from("workout_sessions")
+      .select("id")
+      .eq("id", sessionAId);
+    expect(stillThere).toHaveLength(1);
+  });
+
   it("rejects all client writes to progression tables", async () => {
     const { error: xpError } = await a.from("xp_events").insert({
       user_id: userAId,

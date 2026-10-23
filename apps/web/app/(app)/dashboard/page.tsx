@@ -1,5 +1,7 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/features/auth/user";
 
 export const metadata: Metadata = {
@@ -25,6 +27,9 @@ export default async function DashboardPage() {
       <h1 className="text-2xl font-bold tracking-tight">
         Welcome{profile?.display_name ? `, ${profile.display_name}` : ""}!
       </h1>
+      <Button asChild size="lg" className="w-full">
+        <Link href="/log">Log a workout</Link>
+      </Button>
       <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-center shadow-sm">
         <p className="text-sm font-semibold">Level 1 · Stage 1</p>
         <p className="mt-1 text-xs text-zinc-500">

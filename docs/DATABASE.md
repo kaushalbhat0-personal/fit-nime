@@ -111,3 +111,13 @@ supabase gen types typescript --local > apps/web/lib/supabase/database.types.ts
 The committed file is hand-authored to match the migration; every table
 and column was exercised against the live project during verification.
 Prefer the generator once a linked project or local stack is available.
+
+## Workout logging (RCCF-004)
+
+No schema or RLS change. `logWorkout` writes one `workout_sessions` row
+(for the session user) plus one bulk `workout_entries` insert. Atomicity
+without RPC: payload and catalog are validated before any write, entries
+go in a single statement, and a failed entries insert triggers a
+compensating delete of the just-created own session. The committed
+`Relationships` metadata in `database.types.ts` mirrors the migration FKs
+so embedded history selects stay typed.
