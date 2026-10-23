@@ -1,0 +1,43 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.*
+.pnpm-store/
+
+# next.js
+.next/
+out/
+build/
+coverage/
+
+# env — never commit real secrets
+.env
+.env*.local
+.env.development
+.env.production
+
+# allow examples
+!.env.example
+!apps/web/.env.example
+
+# vercel / turbo
+.vercel
+.turbo/
+
+# typescript / test artifacts
+*.tsbuildinfo
+test-results/
+playwright-report/
+playwright/.cache/
+
+# OS / editor
+.DS_Store
+*.pem
+*.log
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# godot build exports (generated, served from apps/web/public/godot)
+apps/web/public/godot/
+game/godot/.godot/

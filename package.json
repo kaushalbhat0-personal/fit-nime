@@ -1,0 +1,16 @@
+{
+  "name": "fit-nime",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.8.0",
+  "scripts": {
+    "dev": "pnpm --dir apps/web dev",
+    "build": "pnpm --dir apps/web build",
+    "start": "pnpm --dir apps/web start",
+    "lint": "pnpm --dir apps/web lint",
+    "typecheck": "pnpm --dir apps/web typecheck",
+    "test": "pnpm --dir apps/web test",
+    "test:e2e": "pnpm --dir apps/web test:e2e",
+    "format": "pnpm --dir apps/web format"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "Fit-Nime",
+  "short_name": "Fit-Nime",
+  "description": "Log workouts, earn XP, and grow your anime character.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fafaf8",
+  "theme_color": "#fafaf8",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

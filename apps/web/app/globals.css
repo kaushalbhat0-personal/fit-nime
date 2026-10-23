@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: ui-rounded, "Nunito", system-ui, sans-serif;
+}
+
+:root {
+  --background: #fafaf8;
+  --foreground: #09090b;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
