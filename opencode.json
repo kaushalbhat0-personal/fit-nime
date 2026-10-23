@@ -1,13 +1,16 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
-    "supabase": {
-      "type": "remote",
-      "url": "https://mcp.supabase.com/mcp?project_ref=lvkmbczznzxompekgahu",
-      "headers": {
-        "Authorization": "Bearer ${SUPABASE_ACCESS_KEY}"
+    "servers": {
+      "supabase": {
+        "type": "remote",
+        "url": "https://mcp.supabase.com/mcp?project_ref=lvkmbczznzxompekgahu"
       },
-      "enabled": true
+      "shadcn": {
+        "type": "local",
+        "command": ["npx", "shadcn@latest", "mcp"],
+        "cwd": "apps/web"
+      }
     }
   }
 }
