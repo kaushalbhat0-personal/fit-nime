@@ -227,7 +227,12 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      award_workout_xp: {
+        Args: { p_session_id: string };
+        Returns: number;
+      };
+    };
     Enums: {
       exercise_category: ExerciseCategory;
       exercise_unit: ExerciseUnit;

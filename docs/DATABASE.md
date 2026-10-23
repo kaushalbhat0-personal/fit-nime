@@ -121,3 +121,35 @@ go in a single statement, and a failed entries insert triggers a
 compensating delete of the just-created own session. The committed
 `Relationships` metadata in `database.types.ts` mirrors the migration FKs
 so embedded history selects stay typed.
+
+## Progression (RCCF-005)
+
+Gameplay numbers below are **PROPOSED v1** — isolated in
+`features/gamification/domain/xp.ts` (+ `level.ts`) and mirrored in
+`20261023000004_award_xp.sql`. Rebalance the TS file and the SQL CASE
+together; unit tests pin the TS side, `rls.test.ts` pins the SQL side
+against the TS domain as oracle.
+
+| Rule | Value |
+|---|---|
+| XP per unit | reps 1, seconds 1, minutes 2, kilometers 10 |
+| Entry XP | `round(quantity × per-unit)`, clamped to [1, 500] |
+| Workout XP | sum of entry XP (no caps, bonuses, or multipliers) |
+| Stat mapping | exercise category → same-named `*_xp` column |
+| Total XP | derived sum of the four stat columns, never stored |
+| Level | `floor(sqrt(total / 100)) + 1`, derived in code |
+| Event audit | one `xp_events` row per workout (`source='workout'`, session link + `by_stat` in `metadata`) |
+
+Rounding rule: round half up on non-negative inputs — JavaScript
+`Math.round` and PostgreSQL `round(numeric)` agree exactly there.
+
+Server authority: `logWorkout` calls `award_workout_xp(session_id)` after
+persisting entries. The function (`SECURITY DEFINER`, `authenticated`-only)
+re-checks ownership via `auth.uid()`, recomputes XP from trusted tables,
+inserts the event FIRST with `ON CONFLICT DO NOTHING` on the partial
+unique index `xp_events_workout_session_uidx`, updates `player_stats`
+(upsert increment) only when the event was newly inserted, and returns the
+awarded total — one transaction, no check-then-insert race. Direct RPC
+calls are harmless by construction (own sessions, recomputed amounts,
+once-only). `character_state` is never written here; level display derives
+in code. No RLS policy changes; no service-role usage.

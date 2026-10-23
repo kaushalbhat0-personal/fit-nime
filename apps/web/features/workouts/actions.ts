@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/features/auth/user";
+import { calculateWorkoutXp } from "@/features/gamification/domain/xp";
+import type { EntryXpInput } from "@/features/gamification/domain/types";
 import {
   parseLogWorkoutFormData,
   validateLogWorkoutInput,
@@ -16,10 +18,12 @@ export type { LogWorkoutState };
  * never supplies a user_id.
  *
  * Order: authenticate → parse → validate → verify exercises → insert
- * session → bulk-insert entries (one statement, no N+1) → revalidate.
+ * session → bulk-insert entries (one statement, no N+1) → award XP via
+ * the authoritative database function → revalidate.
  * If the entries insert fails, the new session is removed again so a
- * workout never persists half-written. Raw database errors never reach
- * the client.
+ * workout never persists half-written. If the XP award fails, the saved
+ * workout is kept (user data outranks vanity metrics) and the result
+ * honestly reports no XP. Raw database errors never reach the client.
  */
 export async function logWorkout(
   _prevState: LogWorkoutState,
@@ -40,9 +44,10 @@ export async function logWorkout(
 
   // The catalog is the source of truth: every submitted id must exist
   // and be active. Unknown ids are rejected here, never sent to the FK.
+  // Category/unit travel along for the XP feedback breakdown below.
   const { data: catalog, error: catalogError } = await supabase
     .from("exercises")
-    .select("id")
+    .select("id, category, unit")
     .eq("is_active", true);
   if (catalogError || !catalog) {
     return { message: "Could not load exercises. Try again." };
@@ -81,6 +86,37 @@ export async function logWorkout(
     return { message: "Could not save your workout. Try again." };
   }
 
+  // Authoritative award: the database function re-checks ownership,
+  // recomputes XP from trusted tables, and awards each session at most
+  // once — the client-supplied quantities are never trusted for amounts.
+  const { data: xpTotal, error: xpError } = await supabase.rpc(
+    "award_workout_xp",
+    { p_session_id: session.id },
+  );
+
   revalidatePath("/log");
-  return { ok: true, loggedCount: entries.length };
+  revalidatePath("/dashboard");
+
+  if (xpError || typeof xpTotal !== "number") {
+    return { ok: true, loggedCount: entries.length, xp: null };
+  }
+
+  // Display breakdown only; persistence amounts come from the function.
+  const byMeta = new Map(catalog.map((c) => [c.id, c]));
+  const awardInputs: EntryXpInput[] = [];
+  for (const e of entries) {
+    const meta = byMeta.get(e.exerciseId);
+    if (meta) {
+      awardInputs.push({
+        category: meta.category,
+        quantity: e.quantity,
+        unit: meta.unit,
+      });
+    }
+  }
+  return {
+    ok: true,
+    loggedCount: entries.length,
+    xp: { total: xpTotal, byStat: calculateWorkoutXp(awardInputs).byStat },
+  };
 }

@@ -45,14 +45,40 @@ function FormFeedback({ state }: { state: LogWorkoutState }) {
     ? [...new Set(Object.values(state.errors).flat().filter(Boolean))]
     : [];
   if (state.ok) {
+    const statLines =
+      state.xp == null
+        ? []
+        : (Object.entries(state.xp.byStat) as [ExerciseCategory, number][])
+            .filter(([, amount]) => amount > 0)
+            .map(
+              ([category, amount]) =>
+                `${CATEGORY_META[category].label} +${amount}`,
+            );
     return (
-      <p
+      <div
         role="status"
         className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900"
       >
-        Workout logged — {state.loggedCount}{" "}
-        {state.loggedCount === 1 ? "exercise" : "exercises"} saved.
-      </p>
+        <p>
+          Workout logged — {state.loggedCount}{" "}
+          {state.loggedCount === 1 ? "exercise" : "exercises"} saved.
+        </p>
+        {state.xp != null ? (
+          <p className="mt-1 text-base font-bold">+{state.xp.total} XP</p>
+        ) : null}
+        {statLines.length > 0 ? (
+          <ul className="mt-1 font-normal">
+            {statLines.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        ) : null}
+        {state.xp == null ? (
+          <p className="mt-1 font-normal">
+            XP could not be awarded this time — your workout is still saved.
+          </p>
+        ) : null}
+      </div>
     );
   }
   if (!state.message && fieldMessages.length === 0) {

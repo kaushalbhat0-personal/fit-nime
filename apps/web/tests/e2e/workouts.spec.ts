@@ -32,5 +32,7 @@ test("authenticated user can log a workout", async ({ page }) => {
   await page.getByLabel(/Push-ups quantity/).fill("20");
   await page.getByRole("button", { name: "Log workout" }).click();
   await expect(page.getByText(/Workout logged/)).toBeVisible();
+  // Authoritative award feedback: 20 push-ups → 20 strength XP.
+  await expect(page.getByText("+20 XP")).toBeVisible();
   await expect(page.getByText("Push-ups")).toBeVisible();
 });

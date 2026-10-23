@@ -116,4 +116,13 @@ export type LogWorkoutState = {
   message?: string;
   ok?: boolean;
   loggedCount?: number;
+  /**
+   * Authoritative award result. Present (possibly null) only on success:
+   * null means the workout saved but XP could not be awarded — the UI
+   * must not claim XP in that case.
+   */
+  xp?: {
+    total: number;
+    byStat: Record<string, number>;
+  } | null;
 };

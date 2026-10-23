@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { Database } from "@/lib/supabase/database.types";
+import { calculateEntryXp } from "@/features/gamification/domain/xp";
 
 /**
  * RLS + provisioning verification. Runs ONLY against a throwaway stack:
@@ -199,5 +200,82 @@ describe.skipIf(!hasEnv)("rls + provisioning", () => {
       .select("strength_xp")
       .single();
     expect(stats!.strength_xp).toBe(0);
+  });
+
+  it("awards XP exactly once per workout via award_workout_xp", async () => {
+    // Oracle: the pure TS domain. SQL must agree with it exactly.
+    const { data: exercise } = await a
+      .from("exercises")
+      .select("category, unit")
+      .eq("id", exerciseId)
+      .single();
+    const expected = calculateEntryXp(10, exercise!.unit);
+
+    const first = await a.rpc("award_workout_xp", {
+      p_session_id: sessionAId,
+    });
+    expect(first.error).toBeNull();
+    expect(first.data).toBe(expected);
+
+    const { data: stats } = await a
+      .from("player_stats")
+      .select("strength_xp, endurance_xp, agility_xp, focus_xp")
+      .single();
+    const column = `${exercise!.category}_xp` as keyof typeof stats;
+    expect(stats![column]).toBe(expected);
+
+    const { data: events } = await a
+      .from("xp_events")
+      .select("source, amount, metadata");
+    expect(events).toHaveLength(1);
+    expect(events![0]).toMatchObject({ source: "workout", amount: expected });
+    expect(
+      (events![0].metadata as Record<string, unknown>)["workout_session_id"],
+    ).toBe(sessionAId);
+
+    // Re-awards return 0 and change nothing.
+    for (let i = 0; i < 2; i++) {
+      const again = await a.rpc("award_workout_xp", {
+        p_session_id: sessionAId,
+      });
+      expect(again.error).toBeNull();
+      expect(again.data).toBe(0);
+    }
+    const { data: statsAfter } = await a
+      .from("player_stats")
+      .select("strength_xp, endurance_xp, agility_xp, focus_xp")
+      .single();
+    expect(statsAfter).toEqual(stats);
+    const { data: eventsAfter } = await a.from("xp_events").select("id");
+    expect(eventsAfter).toHaveLength(1);
+
+    // No character evolution happens as a side effect.
+    const { data: character } = await a
+      .from("character_state")
+      .select("level, stage")
+      .single();
+    expect(character).toMatchObject({ level: 1, stage: 1 });
+  });
+
+  it("rejects cross-user, anonymous, and bogus award calls", async () => {
+    const cross = await b.rpc("award_workout_xp", {
+      p_session_id: sessionAId,
+    });
+    expect(cross.error).not.toBeNull();
+
+    const anon = anonClient();
+    const anonCall = await anon.rpc("award_workout_xp", {
+      p_session_id: sessionAId,
+    });
+    expect(anonCall.error).not.toBeNull();
+
+    const bogus = await a.rpc("award_workout_xp", {
+      p_session_id: "00000000-0000-4000-8000-000000000000",
+    });
+    expect(bogus.error).not.toBeNull();
+
+    // Nobody's stats moved.
+    const { data: events } = await a.from("xp_events").select("id");
+    expect(events).toHaveLength(1);
   });
 });
