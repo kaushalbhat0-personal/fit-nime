@@ -65,10 +65,13 @@ const VARIANT_ANIMATION: Record<CompanionVariant, string> = {
 export function CompanionFigure({
   variant = "default",
   size = 96,
+  priority = false,
   className,
 }: {
   variant?: CompanionVariant;
   size?: number;
+  /** Above-the-fold instances only — clears the LCP warning. */
+  priority?: boolean;
   className?: string;
 }) {
   return (
@@ -85,6 +88,7 @@ export function CompanionFigure({
         alt=""
         width={size}
         height={size}
+        priority={priority}
         style={{ width: size, height: size }}
       />
     </div>

@@ -63,7 +63,7 @@ export default async function DashboardPage() {
         aria-label="Training companion"
         className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
       >
-        <CompanionFigure size={72} className="mx-0 shrink-0" />
+        <CompanionFigure size={72} priority className="mx-0 shrink-0" />
         <div>
           <p className="text-sm font-bold">Ready when you are.</p>
           <p className="mt-0.5 text-xs leading-5 text-zinc-600">

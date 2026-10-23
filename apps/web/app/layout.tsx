@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     template: "%s | Fit-Nime",
   },
   description:
-    "A gamified fitness app. Log workouts, earn XP, and grow your anime character.",
+    "Train, log workouts, earn XP, and watch your progress grow — with an anime companion cheering you on.",
   applicationName: "Fit-Nime",
   manifest: "/manifest.webmanifest",
   appleWebApp: {

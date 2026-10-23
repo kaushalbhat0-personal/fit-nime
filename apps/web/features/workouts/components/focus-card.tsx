@@ -18,6 +18,8 @@ export function FocusCard({ exercises }: { exercises: LoggableExercise[] }) {
     return null;
   }
 
+  const focusHref = `/log?focus=${exercises.map((e) => e.id).join(",")}`;
+
   return (
     <section
       aria-label="Today's focus"
@@ -45,13 +47,13 @@ export function FocusCard({ exercises }: { exercises: LoggableExercise[] }) {
         ))}
       </ul>
       <div className="mt-3 flex gap-2">
-        <Button asChild size="sm" className="flex-1">
-          <Link href="/log">Start with these</Link>
+        <Button asChild className="min-h-11 flex-1">
+          <Link href={focusHref}>Start with these</Link>
         </Button>
         <Button
           type="button"
-          size="sm"
           variant="secondary"
+          className="min-h-11"
           onClick={() => setDismissed(true)}
         >
           Not today

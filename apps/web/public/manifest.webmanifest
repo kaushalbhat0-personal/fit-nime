@@ -1,7 +1,7 @@
 {
   "name": "Fit-Nime",
   "short_name": "Fit-Nime",
-  "description": "Log workouts, earn XP, and grow your anime character.",
+  "description": "Train, log workouts, earn XP, and watch your progress grow.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

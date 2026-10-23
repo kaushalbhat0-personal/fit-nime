@@ -27,8 +27,8 @@ export default async function Home() {
           Train. Log. Level up.
         </h1>
         <p className="text-sm leading-6 text-zinc-600">
-          A gamified fitness app. Log workouts, earn XP across four stats, and
-          watch your anime character grow.
+          Train, log your workouts, earn XP across four stats, and watch your
+          progress grow — with an anime companion cheering you on.
         </p>
       </header>
 
@@ -36,10 +36,11 @@ export default async function Home() {
         aria-label="Training companion preview"
         className="rounded-2xl border border-zinc-200 bg-white p-6 text-center shadow-sm"
       >
-        <CompanionFigure size={144} />
+        <CompanionFigure size={144} priority />
         <p className="mt-2 text-sm font-semibold">Level 1 · Stage 1</p>
         <p className="mt-1 text-xs text-zinc-500">
-          Your training companion celebrates every workout you log.
+          Train, log your workouts, earn XP, and watch your progress grow — with
+          an anime companion cheering you on.
         </p>
         <div
           className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-100"

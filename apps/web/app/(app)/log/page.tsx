@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Dumbbell } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { CompanionFigure } from "@/components/companion";
+import { parseFocusIdsParam } from "@/features/workouts/domain/focus";
 import {
   LogWorkoutForm,
   type LoggableExercise,
@@ -16,8 +17,17 @@ export const metadata: Metadata = {
  * Workout logging entry point (authenticated: see the (app) layout).
  * Orchestrates only: loads the active exercise catalog for the form and
  * renders the form + recent history. Mutations live in the server action.
+ *
+ * Optional `?focus=<id>,…` (from Today's Focus) highlights that suggestion
+ * at the top of the form. Ids are validated against the active catalog
+ * here and re-validated authoritatively on submit — the URL is a hint,
+ * never a trust boundary.
  */
-export default async function LogPage() {
+export default async function LogPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ focus?: string | string[] }>;
+}) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("exercises")
@@ -40,6 +50,11 @@ export default async function LogPage() {
   }
 
   const exercises: LoggableExercise[] = data;
+  const { focus } = await searchParams;
+  const focusIds = parseFocusIdsParam(
+    focus,
+    exercises.map((e) => e.id),
+  );
 
   return (
     <main className="flex flex-col gap-6">
@@ -57,7 +72,7 @@ export default async function LogPage() {
           </p>
         </div>
       ) : (
-        <LogWorkoutForm exercises={exercises} />
+        <LogWorkoutForm exercises={exercises} focusIds={focusIds} />
       )}
 
       <RecentWorkouts />

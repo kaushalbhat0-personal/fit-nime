@@ -16,6 +16,7 @@ import {
   CATEGORY_META,
   CATEGORY_ORDER,
 } from "@/features/workouts/components/categories";
+import { partitionFocusExercises } from "@/features/workouts/domain/focus";
 import { unitHint } from "@/features/workouts/domain/format";
 import type {
   ExerciseCategory,
@@ -148,10 +149,10 @@ function FormFeedback({ state }: { state: LogWorkoutState }) {
           </p>
         ) : null}
         <div className="mt-3 flex gap-2">
-          <Button asChild size="sm" className="flex-1">
+          <Button asChild className="min-h-11 flex-1">
             <Link href="/dashboard">View progress</Link>
           </Button>
-          <Button asChild size="sm" variant="secondary" className="flex-1">
+          <Button asChild variant="secondary" className="min-h-11 flex-1">
             <Link href="/log">Log another</Link>
           </Button>
         </div>
@@ -178,10 +179,57 @@ function FormFeedback({ state }: { state: LogWorkoutState }) {
   );
 }
 
+/**
+ * One exercise row. Focus rows arrive with the suggested quantity already
+ * filled in (editable — clearing the field skips the exercise); the rest
+ * show the suggestion as a placeholder so nothing is logged by accident.
+ */
+function ExerciseRow({
+  exercise,
+  suggested = false,
+}: {
+  exercise: LoggableExercise;
+  suggested?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <p className="flex items-center gap-1.5 truncate text-sm font-medium">
+          {exercise.name}
+          {suggested ? (
+            <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800">
+              Today&apos;s focus
+            </span>
+          ) : null}
+        </p>
+        <p className="text-xs text-zinc-500">
+          {suggested
+            ? `Suggested ${exercise.default_value} ${unitHint(exercise.unit)}`
+            : `Quantity in ${unitHint(exercise.unit)} · e.g. ${exercise.default_value}`}
+        </p>
+      </div>
+      <Input
+        type="number"
+        inputMode="decimal"
+        min="0"
+        step="any"
+        name={`qty_${exercise.id}`}
+        placeholder={String(exercise.default_value)}
+        defaultValue={suggested ? exercise.default_value : undefined}
+        aria-label={`${exercise.name} quantity in ${unitHint(exercise.unit)}`}
+        className="h-12 w-28 shrink-0 text-base"
+      />
+    </div>
+  );
+}
+
 export function LogWorkoutForm({
   exercises,
+  focusIds = [],
 }: {
   exercises: LoggableExercise[];
+  /** Validated Today's Focus ids (from `?focus=`); rendered first. */
+  focusIds?: string[];
 }) {
   const [state, formAction] = useActionState(logWorkout, initialState);
   const formRef = useRef<HTMLFormElement>(null);
@@ -196,13 +244,31 @@ export function LogWorkoutForm({
     }
   }, [state]);
 
+  const { focus, rest } = partitionFocusExercises(exercises, focusIds);
   const groups = CATEGORY_ORDER.map((category) => ({
     category,
-    items: exercises.filter((e) => e.category === category),
+    items: rest.filter((e) => e.category === category),
   })).filter((g) => g.items.length > 0);
 
   return (
-    <form ref={formRef} action={formAction} className="flex flex-col gap-5">
+    <form
+      ref={formRef}
+      action={formAction}
+      className="flex flex-col gap-5 pb-28"
+    >
+      {focus.length > 0 ? (
+        <fieldset className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm">
+          <legend className="flex items-center gap-1.5 px-1 text-sm font-semibold">
+            <Sparkles aria-hidden="true" className="size-4 text-amber-500" />
+            Today&apos;s Focus
+          </legend>
+          <div className="flex flex-col gap-3">
+            {focus.map((exercise) => (
+              <ExerciseRow key={exercise.id} exercise={exercise} suggested />
+            ))}
+          </div>
+        </fieldset>
+      ) : null}
       {groups.map(({ category, items }) => {
         const { label, Icon } = CATEGORY_META[category];
         return (
@@ -216,30 +282,7 @@ export function LogWorkoutForm({
             </legend>
             <div className="flex flex-col gap-3">
               {items.map((exercise) => (
-                <div
-                  key={exercise.id}
-                  className="flex items-center justify-between gap-3"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">
-                      {exercise.name}
-                    </p>
-                    <p className="text-xs text-zinc-500">
-                      Quantity in {unitHint(exercise.unit)} · e.g.{" "}
-                      {exercise.default_value}
-                    </p>
-                  </div>
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step="any"
-                    name={`qty_${exercise.id}`}
-                    placeholder={String(exercise.default_value)}
-                    aria-label={`${exercise.name} quantity in ${unitHint(exercise.unit)}`}
-                    className="h-12 w-28 shrink-0 text-base"
-                  />
-                </div>
+                <ExerciseRow key={exercise.id} exercise={exercise} />
               ))}
             </div>
           </fieldset>
