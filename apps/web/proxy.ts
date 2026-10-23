@@ -1,9 +1,38 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 // Next 16 uses `proxy` instead of `middleware` for session refresh.
+// Optimistic route protection only: the (app) layout re-checks the
+// session server-side, so this stays a fast redirect, not an auth system.
 export default async function proxy(request: NextRequest) {
-  return updateSession(request);
+  const { response, user } = await updateSession(request);
+  const { pathname } = request.nextUrl;
+
+  const isAuthPage = pathname === "/login" || pathname === "/signup";
+  const isProtectedPage = pathname.startsWith("/dashboard");
+
+  if (!user && isProtectedPage) {
+    return redirectTo(request, response, "/login");
+  }
+
+  if (user && isAuthPage) {
+    return redirectTo(request, response, "/dashboard");
+  }
+
+  return response;
+}
+
+function redirectTo(
+  request: NextRequest,
+  response: NextResponse,
+  path: string,
+): NextResponse {
+  const redirect = NextResponse.redirect(new URL(path, request.url));
+  // Preserve refreshed auth cookies across the redirect.
+  for (const cookie of response.cookies.getAll()) {
+    redirect.cookies.set(cookie.name, cookie.value, cookie);
+  }
+  return redirect;
 }
 
 export const config = {

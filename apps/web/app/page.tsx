@@ -13,15 +13,14 @@ export default function Home() {
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-10">
       <header className="flex flex-col gap-2 text-center">
         <p className="text-xs font-semibold tracking-widest text-zinc-500 uppercase">
-          Fit-Nime · Foundation
+          Fit-Nime
         </p>
         <h1 className="text-3xl font-bold tracking-tight">
           Train. Log. Level up.
         </h1>
         <p className="text-sm leading-6 text-zinc-600">
           A gamified fitness app. Log workouts, earn XP across four stats, and
-          watch your anime character grow. Foundation only — workout logging
-          arrives in the next phase.
+          watch your anime character grow.
         </p>
       </header>
 
@@ -65,11 +64,11 @@ export default function Home() {
 
       <div className="flex flex-col gap-2">
         <Button asChild size="lg" className="w-full">
-          <Link href="/log">Log workout</Link>
+          <Link href="/signup">Create account</Link>
         </Button>
-        <p className="text-center text-xs text-zinc-500">
-          Workout logging, XP, and auth arrive in later phases.
-        </p>
+        <Button asChild variant="secondary" size="lg" className="w-full">
+          <Link href="/login">Sign in</Link>
+        </Button>
       </div>
     </main>
   );

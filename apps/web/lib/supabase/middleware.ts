@@ -1,11 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
+import type { Database } from "@/lib/supabase/database.types";
+import { type User } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
 /**
- * Refreshes the Supabase auth session on every request.
+ * Refreshes the Supabase auth session on every request and returns the
+ * current user for optimistic route decisions in proxy.ts.
  * No business logic here — session handling only.
  */
-export async function updateSession(request: NextRequest) {
+export async function updateSession(request: NextRequest): Promise<{
+  response: NextResponse;
+  user: User | null;
+}> {
   let supabaseResponse = NextResponse.next({ request });
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -14,10 +20,10 @@ export async function updateSession(request: NextRequest) {
   // Foundation without credentials: pass through so `pnpm build` works
   // before Supabase is provisioned. Auth routes will throw a clear error.
   if (!url || !anonKey) {
-    return supabaseResponse;
+    return { response: supabaseResponse, user: null };
   }
 
-  const supabase = createServerClient(url, anonKey, {
+  const supabase = createServerClient<Database>(url, anonKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll();
@@ -34,7 +40,9 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  return supabaseResponse;
+  return { response: supabaseResponse, user };
 }

@@ -4,10 +4,11 @@ A gamified fitness web app. Log workouts, earn XP across Strength, Endurance,
 Agility, and Focus, and watch an anime character grow.
 
 Phase 0 is foundation only: no auth UI, no workout logging, no XP, no Godot.
+Phase 1 (RCCF-003) adds: data model + RLS, exercise seed, auth foundation.
 
 ## Stack
 
-- Next.js 15 (App Router) + TypeScript (strict) + Tailwind CSS v4
+- Next.js 16 (App Router) + TypeScript (strict) + Tailwind CSS v4
 - shadcn/ui pattern + Lucide icons
 - Supabase (Postgres + Auth) via `@supabase/ssr`
 - Zod for validation (from Phase 1 on)
@@ -18,16 +19,19 @@ Phase 0 is foundation only: no auth UI, no workout logging, no XP, no Godot.
 
 ```text
 apps/web/            Next.js PWA (the app)
-  app/               Routes (server components by default)
+  app/(auth)/        Public auth routes (/login, /signup)
+  app/(app)/         Protected shell + /dashboard (server-gated)
+  app/               Public routes (landing, placeholders)
   components/ui/     Shared UI (shadcn-style)
-  features/          Business capabilities (workouts, gamification, ...)
-  lib/supabase/      Browser / server / middleware Supabase helpers
+  features/auth/     Auth schemas, actions, forms, current-user helper
+  features/          Future: workouts, gamification, profile, progress, avatar
+  lib/supabase/      Browser / server / middleware clients + Database types
   lib/utils.ts       Shared helpers (cn)
-  tests/unit/        Vitest smoke tests
-  tests/e2e/        Playwright specs
+  tests/unit/        Vitest tests
+  tests/e2e/         Playwright specs
 game/godot/          Godot 4.x project (deferred, renderer only)
-supabase/migrations/ Database migrations (Phase 1+)
-docs/                Architecture notes
+supabase/migrations/ Database migrations (schema → RLS → seed)
+docs/                Architecture + database notes
 ```
 
 ## Quickstart
@@ -38,6 +42,15 @@ cp apps/web/.env.example apps/web/.env.local
 # fill in NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY
 pnpm dev
 ```
+
+## Database (local)
+
+```sh
+supabase start     # local stack, needs Docker Desktop
+supabase db reset  # apply migrations in order
+```
+
+See `docs/DATABASE.md` for schema, RLS, seeding, and type generation.
 
 ## Checks
 
