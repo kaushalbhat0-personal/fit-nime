@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -82,4 +83,38 @@ export async function logout(): Promise<void> {
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
   redirect("/login");
+}
+
+/**
+ * Google OAuth initiation. Server-side only: builds the Google authorization
+ * URL via Supabase (PKCE verifier cookie is set through the SSR client) and
+ * redirects the browser there. No tokens touch client JS; no secrets here —
+ * the Google Client ID/Secret live in the Supabase Dashboard, not the app.
+ */
+export async function signInWithGoogle(): Promise<void> {
+  const supabase = await createClient();
+  const headersList = await headers();
+
+  // Request-aware origin so local dev and production both work without
+  // hardcoding a domain. Supabase validates `redirectTo` against the
+  // dashboard allowlist, so a spoofed host fails closed there.
+  const forwardedHost = headersList.get("x-forwarded-host");
+  const host = forwardedHost ?? headersList.get("host");
+  const proto =
+    headersList.get("x-forwarded-proto") ??
+    (process.env.NODE_ENV === "development" ? "http" : "https");
+  const origin = host ? `${proto}://${host}` : "http://localhost:3000";
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${origin}/auth/callback?next=/dashboard`,
+    },
+  });
+
+  if (error || !data.url) {
+    redirect("/login");
+  }
+
+  redirect(data.url);
 }

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { signup, type ActionState } from "@/features/auth/actions";
+import { GoogleSignInButton } from "@/features/auth/components/google-sign-in-button";
 
 const initialState: ActionState = {};
 
@@ -29,62 +30,73 @@ export function SignupForm() {
   const [state, formAction] = useActionState(signup, initialState);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4" noValidate>
-      <div>
-        <label htmlFor="email" className="mb-1 block text-sm font-medium">
-          Email
-        </label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          placeholder="you@example.com"
-        />
-        <FieldError messages={state.errors?.email} />
+    <div className="flex flex-col gap-4">
+      <GoogleSignInButton />
+      <div
+        aria-hidden="true"
+        className="flex items-center gap-3 text-xs text-zinc-400"
+      >
+        <span className="h-px flex-1 bg-zinc-200" />
+        <span>or</span>
+        <span className="h-px flex-1 bg-zinc-200" />
       </div>
-      <div>
-        <label htmlFor="password" className="mb-1 block text-sm font-medium">
-          Password
-        </label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          required
-        />
-        <FieldError messages={state.errors?.password} />
-      </div>
-      <div>
-        <label
-          htmlFor="confirmPassword"
-          className="mb-1 block text-sm font-medium"
-        >
-          Confirm password
-        </label>
-        <Input
-          id="confirmPassword"
-          name="confirmPassword"
-          type="password"
-          autoComplete="new-password"
-          required
-        />
-        <FieldError messages={state.errors?.confirmPassword} />
-      </div>
-      {state.message ? (
-        <p role="alert" className="text-sm text-zinc-700">
-          {state.message}
-        </p>
-      ) : null}
-      <SubmitButton />
+      <form action={formAction} className="flex flex-col gap-4" noValidate>
+        <div>
+          <label htmlFor="email" className="mb-1 block text-sm font-medium">
+            Email
+          </label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            placeholder="you@example.com"
+          />
+          <FieldError messages={state.errors?.email} />
+        </div>
+        <div>
+          <label htmlFor="password" className="mb-1 block text-sm font-medium">
+            Password
+          </label>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            required
+          />
+          <FieldError messages={state.errors?.password} />
+        </div>
+        <div>
+          <label
+            htmlFor="confirmPassword"
+            className="mb-1 block text-sm font-medium"
+          >
+            Confirm password
+          </label>
+          <Input
+            id="confirmPassword"
+            name="confirmPassword"
+            type="password"
+            autoComplete="new-password"
+            required
+          />
+          <FieldError messages={state.errors?.confirmPassword} />
+        </div>
+        {state.message ? (
+          <p role="alert" className="text-sm text-zinc-700">
+            {state.message}
+          </p>
+        ) : null}
+        <SubmitButton />
+      </form>
       <p className="text-center text-sm text-zinc-500">
         Already have an account?{" "}
         <Link href="/login" className="font-semibold text-zinc-950 underline">
           Sign in
         </Link>
       </p>
-    </form>
+    </div>
   );
 }

@@ -11,6 +11,26 @@ test("login page renders the sign-in form", async ({ page }) => {
   await expect(page.getByLabel("Email")).toBeVisible();
   await expect(page.getByLabel("Password")).toBeVisible();
   await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Continue with Google" }),
+  ).toBeVisible();
+});
+
+test("signup page offers Google alongside email", async ({ page }) => {
+  await page.goto("/signup");
+  await expect(
+    page.getByRole("button", { name: "Continue with Google" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Create account" }),
+  ).toBeVisible();
+});
+
+test("oauth error page links back to login", async ({ page }) => {
+  await page.goto("/auth/auth-code-error");
+  await expect(
+    page.getByRole("link", { name: "Back to sign in" }),
+  ).toBeVisible();
 });
 
 test("signup page flags mismatched passwords without a backend", async ({
